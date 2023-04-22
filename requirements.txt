@@ -1,0 +1,5 @@
+autopep8 @ file:///opt/conda/conda-bld/autopep8_1650463822033/work
+Pillow==9.5.0
+pycodestyle @ file:///C:/ci_311/pycodestyle_1678376707834/work
+pywin32==306
+toml @ file:///tmp/build/80754af9/toml_1616166611790/work
