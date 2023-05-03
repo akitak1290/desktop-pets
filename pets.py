@@ -5,32 +5,25 @@ from win32api import GetMonitorInfo, MonitorFromPoint
 import tkinter as tk
 from PIL import Image
 
-# TODO
-#   /. categorize if an action will move the model by x/y each frame (possible custom x-speed/y-speed for each model?)
-#   /. make it so that a model can't get moved out of bound (edges)
-#   /. add more models to test Window class working properly
-#   /. replace label with canvas, move canvas to Window
-#    -> problem was the gif was not made of png... label would have been fine
-#
 dir_path = os.path.dirname(os.path.realpath(__file__))
 cat_path = os.path.join(dir_path, "pets", "demo_cat")
 
 placeholder_img = os.path.join(dir_path, "pets", "placeholder.png")
 
 sequence = [
-    [1, 1, 0, 0, 1, 1],
-    [0, 0, 1, 0, 0, 0],
-    [0, 0, 1, 1, 0, 0],
-    [1, 0, 0, 0, 1, 1],
-    [1, 1, 0, 0, 1, 1],
-    [1, 1, 0, 0, 1, 1]
+    [1, 0, 0, 1, 0, 0, 1, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 0, 0, 1, 1, 0, 0],
+    [1, 0, 0, 0, 0, 0, 1, 1],
+    [1, 0, 0, 1, 0, 0, 1, 1],
+    [1, 0, 0, 1, 0, 0, 1, 1]
 ]
-weights = [0.3, 0.1, 0.3, 0.1, 0.1, 0.1]
-speeds = [(0, 0), (0, 0), (0, 0), (0, 0), (-3, 0), (3, 0)]
+weights = [0.3, 0, 0, 0.1, 0.3, 0.1, 0.1, 0.1]
+speeds = [(0, 0), (0, 10), (0, 0), (0, 0), (0, 0), (0, 0), (-3, 0), (3, 0)]
 
 # Abstract away the root window use by multiple Pet instances
-
-
 class Window:
     def __init__(self) -> None:
         # creating window
@@ -47,7 +40,7 @@ class Window:
         self.window.config(bg='black')
         self.window.wm_attributes('-transparentcolor', 'black')
         self.window.overrideredirect(True)
-        # self.window.call("wm", "attributes", ".", "-topmost", "true")
+        self.window.call("wm", "attributes", ".", "-topmost", "true")
         self.window.geometry(str(self.screen_width)+'x' +
                              str(self.screen_height)+'+0+0')
 
@@ -67,6 +60,7 @@ class Window:
         pet = Pet(self, cat_path, sequence, weights, speeds)
         pet.run()
 
+
     def run(self) -> None:
         print('Pets are chilling... (Press Ctrl+C to kill the pets!)')
         self.window.mainloop()  # move this to Window()
@@ -75,7 +69,7 @@ class Window:
 class Pet(Window):
     def __init__(self, root_window, pet_actions_full_path, sequence_list, weights_list, speeds_list) -> None:
         # root window
-        self.window = root_window.window
+        self.root_window = root_window
 
         self.screen_width = root_window.screen_width
         self.screen_height = root_window.screen_height
@@ -86,6 +80,9 @@ class Pet(Window):
         self.weights_list = weights_list
         self.speeds_list = speeds_list
         self.actions_img_objs = {}
+        self.is_drag = False
+        self.falling = False
+        self.offset_x, self.offset_y = 0, 0
 
         self.cycle = 0
         self.action_idx = 0
@@ -102,6 +99,11 @@ class Pet(Window):
 
         self.image_container = self.canvas.create_image(
             self.x, self.y, anchor=tk.NW, image=self.ph)
+        
+        # event listeners
+        self.canvas.tag_bind(self.image_container, '<Button-1>', self.click_pet)
+        self.canvas.tag_bind(self.image_container, '<B1-Motion>', self.drag_pet)
+        self.canvas.tag_bind(self.image_container, '<ButtonRelease-1>', self.release_pet)
 
     def process(self) -> bool:
         actions_names = [gif for gif in os.listdir(self.actions_full_path)
@@ -120,6 +122,16 @@ class Pet(Window):
         return True
 
     def update_frame(self) -> None:
+        if self.is_drag:
+            self.action_idx = 2
+            self.cycle = 0
+            return
+
+        if self.falling:
+            self.action_idx = 1
+            self.cycle = 0
+            return
+
         if self.cycle < len(self.actions_img_objs[self.action_idx]) - 1:
             self.cycle += 1
         else:  # end of an action
@@ -137,31 +149,54 @@ class Pet(Window):
                 k=1
             )[0]
 
-    def update_loop(self) -> None:
-
+    def draw_loop(self) -> None:
         # set current frame
         frame = self.actions_img_objs[self.action_idx][self.cycle]
         self.canvas.itemconfig(self.image_container, image=frame)
 
         # set new frame's position
-        x_speed = self.speeds_list[self.action_idx][0]
-        y_speed = self.speeds_list[self.action_idx][1]
+        x_dist = self.speeds_list[self.action_idx][0]
+        y_dist = self.speeds_list[self.action_idx][1]
 
-        if self.x + x_speed >= self.screen_width or self.x + x_speed <= 0:
-            x_speed = 0
-        if self.y + y_speed >= self.screen_height or self.y + y_speed <= 0:
-            y_speed = 0
+        if self.x + x_dist >= self.screen_width + 200 or self.x + x_dist <= -100:
+            x_dist = 0
+        if self.y + y_dist <= -100:
+             y_dist = 0
+        if self.y >= self.screen_height - 100 and not self.is_drag:
+            self.falling = False
+            if self.y > self.screen_height - 100:
+                y_dist = self.screen_height - 100 - self.y
+            else:
+                y_dist = 0
 
-        self.canvas.move(self.image_container, x_speed, y_speed)
+        self.x += x_dist
+        self.y += y_dist
+        self.canvas.move(self.image_container, x_dist, y_dist)
 
         # update the next frame / update next gif
         self.update_frame()
 
-        # loop
-        self.window.after(100, self.update_loop)
+        # loop, refresh rate = 10/sec
+        self.root_window.window.after(100, self.draw_loop)
+
+    def click_pet(self, event) -> None:
+        self.offset_x = event.x - self.x
+        self.offset_y = event.y - self.y
+        self.is_drag = True
+
+    def drag_pet(self, event) -> None:
+        x_dist = event.x - self.x - self.offset_x
+        y_dist = event.y - self.y - self.offset_y
+        self.x = event.x - self.offset_x
+        self.y = event.y - self.offset_y
+        self.canvas.move(self.image_container, x_dist, y_dist)
+    
+    def release_pet(self, event) -> None:
+        self.falling = True
+        self.is_drag = False
 
     def run(self) -> None:
-        self.window.after(1, self.update_loop)
+        self.root_window.window.after(1, self.draw_loop)
 
 
 root_window = Window()
