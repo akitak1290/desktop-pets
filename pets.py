@@ -66,7 +66,7 @@ class Window:
         self.window.mainloop()  # move this to Window()
 
 
-class Pet(Window):
+class Pet:
     def __init__(self, root_window, pet_actions_full_path, sequence_list, weights_list, speeds_list) -> None:
         # root window
         self.root_window = root_window
