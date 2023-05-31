@@ -2,6 +2,8 @@
 
 Current pet assets are borrowed from [this tutorial](https://medium.com/@thenobodydev).
 
+IMPORTANT: check out [WIP list](#wip)
+
 ## Vision:
 The main component of the application is a transparent overlay that sits on top of the desktop to draw animated pets on the taskbar. Pets will randomly go idle, move around, or more based on a predefined actions sequence. The other major feature is the Pet Creator, a tool that lets users create new pets and customize their actions sequence.
 
@@ -38,5 +40,6 @@ In the Pet Creator window, users can:
 - Create and add new pet blueprints.
 - Detach the script and turn it into a windows process.
 - Instead of the gear icon, setup the entry point for the app through the system app tray.
+- IMPORTANT: when adding new actions in the __Pet Creator__ window, gif files should only be 100x100 pixel. Add feat to force resize the gifs after importing them.
 
 
