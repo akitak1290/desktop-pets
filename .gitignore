@@ -1,0 +1,7 @@
+.conda
+
+**/petdata.json
+
+**/__pycache__/
+
+**/test.py
