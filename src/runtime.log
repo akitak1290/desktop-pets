@@ -1,0 +1,12 @@
+PIL.PngImagePlugin - DEBUG - STREAM b'IHDR' 16 13
+PIL.PngImagePlugin - DEBUG - STREAM b'sBIT' 41 4
+PIL.PngImagePlugin - DEBUG - b'sBIT' 41 4 (unknown)
+PIL.PngImagePlugin - DEBUG - STREAM b'pHYs' 57 9
+PIL.PngImagePlugin - DEBUG - STREAM b'tEXt' 78 25
+PIL.PngImagePlugin - DEBUG - STREAM b'IDAT' 115 420
+PIL.PngImagePlugin - DEBUG - STREAM b'IHDR' 16 13
+PIL.PngImagePlugin - DEBUG - STREAM b'sBIT' 41 4
+PIL.PngImagePlugin - DEBUG - b'sBIT' 41 4 (unknown)
+PIL.PngImagePlugin - DEBUG - STREAM b'pHYs' 57 9
+PIL.PngImagePlugin - DEBUG - STREAM b'tEXt' 78 25
+PIL.PngImagePlugin - DEBUG - STREAM b'IDAT' 115 420
