@@ -1,7 +1,9 @@
 {
 	"cSpell.words": [
 		"customtkinter",
+		"highlightthickness",
 		"maincanvas",
-		"petcreator"
+		"petcreator",
+		"putalpha"
 	]
 }
