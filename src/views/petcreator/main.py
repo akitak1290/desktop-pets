@@ -1,8 +1,10 @@
 import customtkinter
 import tkinter as tk
 from PIL import Image, ImageTk
+from utils import AssetT, DraggableAssetT
 
 from views.petcreator.assets import Assets
+from views.petcreator.editcanvas import EditCanvas
 
 class PetCreator(customtkinter.CTkToplevel):
 	'''
@@ -16,47 +18,64 @@ class PetCreator(customtkinter.CTkToplevel):
 		super().__init__(master, **kwargs)
 
 		# Check the note for the class
-		self.draggable_label: tk.Label|None = None
-		self.draggable_img: customtkinter.CTkImage|None = None
+		self._latest_draggable_asset: DraggableAssetT|None = None
 
-		self.wrapper_canvas = tk.Canvas(master=self, width=1000, height= 600, highlightthickness=0)
-		self.wrapper_canvas.pack(fill="both", expand=True, side= tk.TOP)
-		self.interior = interior = customtkinter.CTkFrame(self.wrapper_canvas)
-		self.interior_id = self.wrapper_canvas.create_window(0, 0, window=interior, anchor="nw")
-		self.wrapper_canvas.bind("<Configure>", self._on_wrapper_canvas_resize)
+		self.grid_rowconfigure(0, weight=1)
+		self.grid_columnconfigure(0, weight=1)
+
+		self.interior = interior = customtkinter.CTkFrame(self)
+		self.interior.grid(row=0, column=0, sticky="news")
 
 		# 3x3 grid
-		interior.grid_columnconfigure((0, 2), weight=1)
-		interior.grid_columnconfigure(1, weight=4)
+		self.interior.grid_columnconfigure((0, 2), weight=1)
+		self.interior.grid_columnconfigure(1, weight=4)
+		self.interior.grid_rowconfigure((0, 2), weigh=5)
+		self.interior.grid_rowconfigure(1, weight=1)
 
 		# tabs
 		self.asset_view = Assets(interior)
-		self.asset_view.grid(row=0, column=0, padx=(10, 10), sticky="nsew")
+		self.asset_view.grid(row=0, column=0, padx=(10, 10), sticky="nsew", rowspan=1)
 
-		self.frame2 = customtkinter.CTkFrame(interior)
-		self.frame2.grid(row=0, column=1, padx=(10, 10), sticky="nsew")
+		self.edit_canvas = EditCanvas(interior)
+		self.edit_canvas.grid(row=0, column=1, padx=(10, 10), sticky="nsew", rowspan=3)
 
 		self.frame3 = customtkinter.CTkFrame(interior)
-		self.frame3.grid(row=0, column=2, padx=(10, 10), sticky="nsew")
+		self.frame3.grid(row=0, column=2, padx=(10, 10), sticky="nsew", rowspan=2)
 
-	def _on_wrapper_canvas_resize(self, event):
-		self.wrapper_canvas.itemconfigure(self.interior_id, width=event.width)
+		self.frame4 = customtkinter.CTkFrame(interior)
+		self.frame4.grid(row=1, column=0, padx=(10, 10), sticky="nsew", rowspan=2)
 
-	def create_draggable_asset(self, img_path: str, start_pos: list[int]):
+	def create_draggable_asset(self, const_asset: AssetT, start_pos: list[int]):
 		self.remove_draggable_asset()
-		img = Image.open(img_path)
+		img = Image.open(const_asset["file_path"])
 		img = img.resize((30, 30))
-		# img.putalpha(127)
-		self.draggable_img = ImageTk.PhotoImage(img)
-		self.draggable_label = tk.Label(self, image=self.draggable_img, highlightthickness=0)
-		self.draggable_label.place(x=start_pos[0], y=start_pos[1]-15, anchor="n")
+		_draggable_img = ImageTk.PhotoImage(img)
+		self._latest_draggable_asset = {
+			"img": _draggable_img,
+			"widget": tk.Label(self, image=_draggable_img, highlightthickness=0),
+			"file_path": const_asset["file_path"],
+			"file_name": const_asset["file_name"],
+			"file_format": const_asset["file_format"]
+		}
+		self._latest_draggable_asset["widget"].place(x=start_pos[0], y=start_pos[1]-15, anchor="n")
 
+		return const_asset["file_path"]
+		
 	def drag_asset(self, pos: list[int]):
-		if self.draggable_label is not None:
-			self.draggable_label.place(x=pos[0], y=pos[1]-15, anchor="n")
+		if self._latest_draggable_asset is not None:
+			if self._latest_draggable_asset["widget"] is not None:
+				self._latest_draggable_asset["widget"].place(x=pos[0], y=pos[1]-15, anchor="n")
 
 	def remove_draggable_asset(self):
-		if self.draggable_label is not None:
-			self.draggable_label.destroy()
-			self.draggable_label = None
-			self.draggable_img = None
+		if self._latest_draggable_asset is not None:
+			if self._latest_draggable_asset["widget"] is not None:
+				self._latest_draggable_asset["widget"].destroy()
+				self._latest_draggable_asset["widget"] = None
+
+			self._latest_draggable_asset = None
+	
+	def remove_draggable_asset_widget(self):
+		if self._latest_draggable_asset is not None:
+			if self._latest_draggable_asset["widget"] is not None:
+				self._latest_draggable_asset["widget"].destroy()
+				self._latest_draggable_asset["widget"] = None
